@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fiesta - Multi-LLM Ensemble Engine</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --primary: #000000;
+            --border: #000000;
+        }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+        h1 {
+            text-align: center;
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+        }
+        p.subtitle {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .card {
+            background-color: var(--bg-color);
+            border: 4px solid var(--border);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 8px 8px 0px rgba(0,0,0,1);
+        }
+        textarea {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 3px solid var(--border);
+            color: var(--text-color);
+            padding: 1.5rem;
+            font-size: 1.1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            box-sizing: border-box;
+            margin-bottom: 1.5rem;
+            transition: all 0.2s ease;
+        }
+        textarea:focus {
+            outline: none;
+            box-shadow: 6px 6px 0px rgba(0,0,0,1);
+        }
+        button {
+            background: var(--primary);
+            color: #ffffff;
+            border: 3px solid var(--border);
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background: var(--bg-color);
+            color: var(--text-color);
+            box-shadow: 6px 6px 0px rgba(0,0,0,1);
+        }
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px rgba(0,0,0,1);
+        }
+        button:disabled {
+            background: #cccccc;
+            color: #666666;
+            border-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .result-container {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .metrics {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            border-bottom: 4px solid var(--border);
+            padding-bottom: 1rem;
+        }
+        .metric-badge {
+            background: var(--text-color);
+            color: var(--bg-color);
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .markdown-body {
+            background-color: #f8f8f8;
+            border: 3px solid var(--border);
+            padding: 2rem;
+            overflow-x: auto;
+            line-height: 1.7;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            margin-bottom: 3rem;
+            box-shadow: inset 4px 4px 0px rgba(0,0,0,0.05);
+        }
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            display: inline-block;
+            border-bottom: 4px solid var(--border);
+            padding-bottom: 0.25rem;
+        }
+        
+        .models-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .models-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .model-card {
+            border: 3px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 4px 0px rgba(0,0,0,1);
+            min-width: 0;
+        }
+
+        .model-header {
+            background: var(--text-color);
+            color: var(--bg-color);
+            padding: 0.75rem 1rem;
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .model-latency {
+            font-size: 0.85rem;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 0.2rem 0.5rem;
+            border: 2px solid var(--bg-color);
+        }
+
+        .model-body {
+            padding: 1.5rem;
+            font-size: 0.85rem;
+            overflow-y: auto;
+            max-height: 500px;
+            background: #ffffff;
+            flex-grow: 1;
+        }
+        
+        .model-body pre, .markdown-body pre {
+            background-color: #f0f0f0;
+            padding: 1rem;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+        
+        .model-body code, .markdown-body code {
+            font-family: 'Consolas', monospace;
+            background-color: #f0f0f0;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.9em;
+        }
+
+        .model-body pre code, .markdown-body pre code {
+            padding: 0;
+            background-color: transparent;
+            border: none;
+        }
+        
+        .model-body img, .markdown-body img {
+            max-width: 100%;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 1.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Fiesta</h1>
+        <p class="subtitle">Premium Multi-LLM Ensemble Engine</p>
+        
+        <div class="card">
+            <textarea id="prompt" placeholder="Ask a coding question (e.g., 'Write a python script to scrape a website')"></textarea>
+            <button id="submitBtn" onclick="generateResponse()">Synthesize Best Answer</button>
+            <div id="loader" class="loader">Querying Models & Judging...</div>
+        </div>
+
+        <div id="resultContainer" class="result-container card">
+            <div class="metrics">
+                <span class="metric-badge" id="latencyBadge">Latency: 0s</span>
+            </div>
+            
+            <div class="section-title">Best Synthesized Answer</div>
+            <div id="answer" class="markdown-body"></div>
+
+            <div class="section-title" style="margin-top: 2rem;">Individual Model Outputs</div>
+            <div class="models-grid" id="modelsGrid">
+                <!-- Model cards will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        async function generateResponse() {
+            const promptStr = document.getElementById('prompt').value;
+            if (!promptStr.trim()) return;
+
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loader');
+            const resultContainer = document.getElementById('resultContainer');
+            
+            btn.disabled = true;
+            btn.innerText = "Working...";
+            loader.style.display = 'block';
+            resultContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/ensemble', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: promptStr })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    document.getElementById('latencyBadge').innerText = 'Total Latency: ' + data.latency;
+                    document.getElementById('answer').innerHTML = marked.parse(data.answer);
+                    
+                    const modelsGrid = document.getElementById('modelsGrid');
+                    modelsGrid.innerHTML = ''; // Clear previous
+                    
+                    if (data.individualResponses && data.individualResponses.length > 0) {
+                        data.individualResponses.forEach(modelData => {
+                            const card = document.createElement('div');
+                            card.className = 'model-card';
+                            
+                            const header = document.createElement('div');
+                            header.className = 'model-header';
+                            header.innerHTML = `<span>${modelData.model}</span> <span class="model-latency">${modelData.latency}</span>`;
+                            
+                            const body = document.createElement('div');
+                            body.className = 'model-body';
+                            body.innerHTML = marked.parse(modelData.response);
+                            
+                            card.appendChild(header);
+                            card.appendChild(body);
+                            modelsGrid.appendChild(card);
+                        });
+                    }
+
+                    resultContainer.style.display = 'block';
+                }
+            } catch (error) {
+                alert('An error occurred: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Synthesize Best Answer";
+                loader.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
