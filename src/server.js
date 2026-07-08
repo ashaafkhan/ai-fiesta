@@ -17,6 +17,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'An unexpected error occurred' });
 });
 
-app.listen(PORT, () => {
-  logger.info(`AI Fiesta Server is running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    logger.info(`AI Fiesta Server is running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
