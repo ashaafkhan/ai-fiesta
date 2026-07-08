@@ -15,7 +15,7 @@ class AiController {
       
       const guardrailCheck = await guardrailService.evaluatePrompt(prompt);
       if (!guardrailCheck.isAllowed) {
-        logger.warn('Guardrail triggered for prompt', { reason: guardrailCheck.reason });
+        logger.info('Guardrail triggered for prompt', { reason: guardrailCheck.reason });
         return res.status(403).json({ error: 'Your request could not be processed due to a safety violation.' });
       }
       

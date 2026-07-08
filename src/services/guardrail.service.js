@@ -32,15 +32,12 @@ ${prompt}
       const bouncerModel = providers.groq.models.bouncer || 'llama3-8b-8192';
       const result = await groqProvider.generateResponse(guardrailPrompt, bouncerModel, 'Bouncer');
       
-      // Clean up potential markdown formatting from the response
-      let responseText = result.response.trim();
-      if (responseText.startsWith('\`\`\`json')) {
-        responseText = responseText.replace(/^\`\`\`json/, '').replace(/\`\`\`$/, '').trim();
-      } else if (responseText.startsWith('\`\`\`')) {
-        responseText = responseText.replace(/^\`\`\`/, '').replace(/\`\`\`$/, '').trim();
+      // Try to extract JSON from the response using regex
+      const jsonMatch = result.response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No JSON object found in response');
       }
-
-      const parsedResponse = JSON.parse(responseText);
+      const parsedResponse = JSON.parse(jsonMatch[0]);
       
       logger.info('Guardrail evaluation completed', { isAllowed: parsedResponse.isAllowed });
       return parsedResponse;
