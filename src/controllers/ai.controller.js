@@ -1,4 +1,5 @@
 const ensembleService = require('../services/ensemble.service');
+const guardrailService = require('../services/guardrail.service');
 const logger = require('../utils/logger');
 
 class AiController {
@@ -11,6 +12,12 @@ class AiController {
       }
 
       logger.info('API request received', { prompt: prompt.substring(0, 50) + '...' });
+      
+      const guardrailCheck = await guardrailService.evaluatePrompt(prompt);
+      if (!guardrailCheck.isAllowed) {
+        logger.warn('Guardrail triggered for prompt', { reason: guardrailCheck.reason });
+        return res.status(403).json({ error: 'Your request could not be processed due to a safety violation.' });
+      }
       
       const result = await ensembleService.processPrompt(prompt);
       
