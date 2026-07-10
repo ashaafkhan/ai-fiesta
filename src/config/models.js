@@ -6,7 +6,7 @@ module.exports = {
         gptOss: 'openai/gpt-oss-20b',
         llama: 'llama-3.3-70b-versatile',
         judge: 'llama-3.3-70b-versatile',
-        bouncer: 'llama3-8b-8192'
+        bouncer: 'llama-3.3-70b-versatile'
       }
     },
     google: {
