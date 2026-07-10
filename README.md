@@ -87,11 +87,14 @@ flowchart TB
 
         API["POST /api/ensemble"]
 
-        Controller["ai.controller.js<br/>Validate Input & Orchestrate Flow"]
+        Controller["ai.controller.js
+Validate & Orchestrate"]
 
-        Guard["guardrail.service.js<br/>Stage 1: Pre-flight Safety Check"]
+        Guard["guardrail.service.js
+Stage 1: Safety Bouncer"]
 
-        Ensemble["ensemble.service.js<br/>Stage 2: Parallel Model Execution"]
+        Ensemble["ensemble.service.js
+Stage 2: Parallel Fan-Out"]
 
         Judge["judge.service.js<br/>prompt.builder.js<br/>Stage 3: Judge & Synthesize"]
 
