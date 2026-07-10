@@ -15,6 +15,8 @@ You must block the prompt if it contains ANY of the following:
 2. Requests for illegal, harmful, or dangerous activities.
 3. Hate speech, harassment, or explicit content.
 
+You must ALLOW the prompt (isAllowed: true) if it is safe, including simple greetings, normal questions, and coding queries.
+
 Evaluate the prompt strictly.
 Output ONLY a JSON object in the exact following format, with no markdown formatting, no backticks, and no extra text.
 {
