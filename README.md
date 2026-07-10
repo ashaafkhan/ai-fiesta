@@ -71,45 +71,72 @@ The philosophy: **No single model is perfect.** GPT OSS might write cleaner code
 ## System Architecture
 
 ```mermaid
-flowchart TD
-    A(["🌐 CLIENT\nindex.html + Vanilla JS + marked.js"]) -->|POST /api/ensemble| B
+flowchart TB
 
-    B(["⚡ EXPRESS SERVER\nsrc/server.js — Serverless on Vercel"])
-    B --> C
+    %% =========================
+    %% Client
+    %% =========================
+    subgraph Client["Client (Browser)"]
+        UI["index.html<br/>Vanilla JS<br/>marked.js"]
+    end
 
-    C(["🎮 ai.controller.js\nValidates input, orchestrates flow"])
-    C --> D
+    %% =========================
+    %% Server
+    %% =========================
+    subgraph Server["Express Server (Node.js)<br/>Serverless on Vercel"]
 
-    D(["🛡️ guardrail.service.js\nSTAGE 1 — Pre-flight Bouncer LLM"])
-    D -->|FAIL| E(["🚫 403 Forbidden\nGeneric error — no detail exposed"])
-    D -->|PASS| F
+        API["POST /api/ensemble"]
 
-    F(["⚙️ ensemble.service.js\nSTAGE 2 — Fan-Out via Promise.all"])
+        Controller["ai.controller.js<br/>Validate Input & Orchestrate Flow"]
 
-    F --> G(["🤖 GPT OSS\nGroq API"])
-    F --> H(["🔷 Gemini 2.5 Flash\nGoogle API"])
-    F --> I(["🦙 Llama 3.3 70B\nGroq API"])
+        Guard["guardrail.service.js<br/>Stage 1: Pre-flight Safety Check"]
 
-    G --> J
-    H --> J
-    I --> J
+        Ensemble["ensemble.service.js<br/>Stage 2: Parallel Model Execution"]
 
-    J(["⚖️ judge.service.js + prompt.builder.js\nSTAGE 3 — AI Synthesis Judge"])
-    J --> K(["✅ Final Response\nanswer + individualResponses + latency"])
-    K --> L(["🖥️ CLIENT RENDER\nmarked.js parses Markdown to HTML"])
+        Judge["judge.service.js<br/>prompt.builder.js<br/>Stage 3: Judge & Synthesize"]
 
-    style A fill:#6366f1,color:#fff,stroke:#4f46e5
-    style B fill:#0f172a,color:#fff,stroke:#334155
-    style C fill:#0f172a,color:#fff,stroke:#334155
-    style D fill:#b45309,color:#fff,stroke:#92400e
-    style E fill:#dc2626,color:#fff,stroke:#b91c1c
-    style F fill:#0f172a,color:#fff,stroke:#334155
-    style G fill:#16a34a,color:#fff,stroke:#15803d
-    style H fill:#2563eb,color:#fff,stroke:#1d4ed8
-    style I fill:#7c3aed,color:#fff,stroke:#6d28d9
-    style J fill:#b45309,color:#fff,stroke:#92400e
-    style K fill:#0f172a,color:#fff,stroke:#334155
-    style L fill:#6366f1,color:#fff,stroke:#4f46e5
+        Response["Final JSON Response<br/>answer • individualResponses • latency"]
+
+    end
+
+    %% =========================
+    %% Models
+    %% =========================
+    subgraph Models["AI Models (Parallel Fan-Out)"]
+
+        GPT["GPT OSS<br/>Groq API"]
+
+        Gemini["Gemini<br/>Google AI"]
+
+        Llama["Llama<br/>Groq API"]
+
+    end
+
+    %% =========================
+    %% Error
+    %% =========================
+    Forbidden["403 Forbidden<br/>Generic Error Response"]
+
+    %% =========================
+    %% Flow
+    %% =========================
+    UI --> API
+    API --> Controller
+    Controller --> Guard
+
+    Guard -->|PASS| Ensemble
+    Guard -->|FAIL| Forbidden
+
+    Ensemble --> GPT
+    Ensemble --> Gemini
+    Ensemble --> Llama
+
+    GPT --> Judge
+    Gemini --> Judge
+    Llama --> Judge
+
+    Judge --> Response
+    Response --> UI
 ```
 
 ---
