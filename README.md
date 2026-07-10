@@ -49,13 +49,13 @@
 
 ---
 
-## 🤔 What is AI Fiesta?
+## What is AI Fiesta?
 
-AI Fiesta is not just another AI chatbot. It is a **Multi-LLM Ensemble Engine** — a system that orchestrates multiple frontier AI models simultaneously and uses a dedicated **AI Judge** to synthesize their individual responses into a single, superior answer.
+AI Fiesta is not just another AI chatbot. It is a **Multi-LLM Ensemble Engine** - a system that orchestrates multiple frontier AI models simultaneously and uses a dedicated **AI Judge** to synthesize their individual responses into a single, superior answer.
 
 The philosophy: **No single model is perfect.** GPT OSS might write cleaner code while Llama 3 might have better reasoning and Gemini excels at structure. AI Fiesta extracts the best of all three, every single time.
 
-### ✨ Key Features
+### Key Features
 
 | Feature | Description |
 |---|---|
@@ -68,73 +68,59 @@ The philosophy: **No single model is perfect.** GPT OSS might write cleaner code
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                          CLIENT (Browser)                             │
-│                  index.html + Vanilla JS + marked.js                  │
-└─────────────────────────────┬────────────────────────────────────────┘
-                              │  POST /api/ensemble
-                              ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                       EXPRESS SERVER (Node.js)                        │
-│                          src/server.js                                │
-│                    (Serverless on Vercel)                              │
-└──────────┬──────────────────────────────────────────────────────────┘
-           │
-           ▼
-┌──────────────────────┐
-│  ai.controller.js    │  ← validates input, orchestrates flow
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ guardrail.service.js │  ← STAGE 1: Pre-flight Safety Check (Bouncer LLM)
-└──────────┬───────────┘
-      PASS │   FAIL ──► 403 Forbidden (generic error, no detail exposed)
-           ▼
-┌──────────────────────┐
-│ ensemble.service.js  │  ← STAGE 2: Fan-Out to 3 Models in Parallel
-└──────────┬───────────┘
-           │
-     Promise.all([ ... ])
-     ┌─────┴──────┬────────────┐
-     ▼            ▼            ▼
-┌─────────┐ ┌──────────┐ ┌──────────┐
-│ GPT OSS │ │  Gemini  │ │  Llama   │
-│  Groq   │ │ Google   │ │  Groq    │
-│  API    │ │  API     │ │  API     │
-└─────────┘ └──────────┘ └──────────┘
-     │            │            │
-     └────────────┴────────────┘
-                  │
-                  ▼
-        ┌─────────────────┐
-        │  judge.service  │  ← STAGE 3: Synthesis (Judge LLM on Groq)
-        │  + prompt.builder│
-        └────────┬────────┘
-                 │
-                 ▼
-        ┌─────────────────┐
-        │ Final Response  │  ← answer + individualResponses + latency
-        └────────┬────────┘
-                 │
-                 ▼
-           CLIENT RENDER
-         (marked.js parses
-          Markdown to HTML)
+```mermaid
+flowchart TD
+    A(["🌐 CLIENT\nindex.html + Vanilla JS + marked.js"]) -->|POST /api/ensemble| B
+
+    B(["⚡ EXPRESS SERVER\nsrc/server.js — Serverless on Vercel"])
+    B --> C
+
+    C(["🎮 ai.controller.js\nValidates input, orchestrates flow"])
+    C --> D
+
+    D(["🛡️ guardrail.service.js\nSTAGE 1 — Pre-flight Bouncer LLM"])
+    D -->|FAIL| E(["🚫 403 Forbidden\nGeneric error — no detail exposed"])
+    D -->|PASS| F
+
+    F(["⚙️ ensemble.service.js\nSTAGE 2 — Fan-Out via Promise.all"])
+
+    F --> G(["🤖 GPT OSS\nGroq API"])
+    F --> H(["🔷 Gemini 2.5 Flash\nGoogle API"])
+    F --> I(["🦙 Llama 3.3 70B\nGroq API"])
+
+    G --> J
+    H --> J
+    I --> J
+
+    J(["⚖️ judge.service.js + prompt.builder.js\nSTAGE 3 — AI Synthesis Judge"])
+    J --> K(["✅ Final Response\nanswer + individualResponses + latency"])
+    K --> L(["🖥️ CLIENT RENDER\nmarked.js parses Markdown to HTML"])
+
+    style A fill:#6366f1,color:#fff,stroke:#4f46e5
+    style B fill:#0f172a,color:#fff,stroke:#334155
+    style C fill:#0f172a,color:#fff,stroke:#334155
+    style D fill:#b45309,color:#fff,stroke:#92400e
+    style E fill:#dc2626,color:#fff,stroke:#b91c1c
+    style F fill:#0f172a,color:#fff,stroke:#334155
+    style G fill:#16a34a,color:#fff,stroke:#15803d
+    style H fill:#2563eb,color:#fff,stroke:#1d4ed8
+    style I fill:#7c3aed,color:#fff,stroke:#6d28d9
+    style J fill:#b45309,color:#fff,stroke:#92400e
+    style K fill:#0f172a,color:#fff,stroke:#334155
+    style L fill:#6366f1,color:#fff,stroke:#4f46e5
 ```
 
 ---
 
-## 🧠 Engineering Deep Dive
+## Engineering Deep Dive
 
 ### 1. Parallel Execution with `Promise.all`
 
 The most critical performance optimization in AI Fiesta is in [`ensemble.service.js`](src/services/ensemble.service.js).
 
-**Naive (slow) approach — sequential:**
+**Naive (slow) approach - sequential:**
 ```javascript
 // This would take ~10s (3s + 3s + 4s)
 const r1 = await groqProvider.generateResponse(prompt, 'gpt-oss', 'GPT OSS');
@@ -142,7 +128,7 @@ const r2 = await geminiProvider.generateResponse(prompt, 'gemini-flash', 'Gemini
 const r3 = await groqProvider.generateResponse(prompt, 'llama-3.3', 'Llama');
 ```
 
-**AI Fiesta's approach — concurrent:**
+**AI Fiesta's approach - concurrent:**
 ```javascript
 // All 3 run AT THE SAME TIME. Total time = slowest model (~3-4s)
 const modelPromises = [
@@ -169,7 +155,7 @@ By using `Promise.all`, all 3 LLM API calls are fired simultaneously. The total 
 
 ---
 
-### 3. Provider Design Pattern — Lazy Singleton
+### 3. Provider Design Pattern - Lazy Singleton
 
 Both [`groq.provider.js`](src/providers/groq.provider.js) and [`gemini.provider.js`](src/providers/gemini.provider.js) implement a **Lazy Singleton** pattern using JavaScript getter methods.
 
@@ -194,7 +180,7 @@ module.exports = new GroqProvider(); // Singleton exported
 
 ---
 
-### 4. Graceful Error Handling — Fail-Safe Providers
+### 4. Graceful Error Handling - Fail-Safe Providers
 
 Every provider wraps its API call in a `try/catch` and returns a **structured error object** instead of throwing. This means if one model (e.g., Gemini) fails, the ensemble continues running with the 2 successful responses and still gives you an answer.
 
@@ -218,7 +204,7 @@ AI Fiesta follows a strict **MVC + Services** layered architecture:
 src/
 ├── config/          # Centralized model configuration (single source of truth)
 │   └── models.js
-├── controllers/     # HTTP layer — validates input, calls services, sends response
+├── controllers/     # HTTP layer - validates input, calls services, sends response
 │   └── ai.controller.js
 ├── routes/          # Express route definitions
 │   └── ai.routes.js
@@ -279,7 +265,7 @@ This prevents the infamous bug where asking "hello" would result in the Judge sy
 
 ### 8. Serverless-Compatible Express Server
 
-The server is written to be **dual-mode** — it works as a standard Node.js HTTP server locally and as a Vercel Serverless Function in production:
+The server is written to be **dual-mode** - it works as a standard Node.js HTTP server locally and as a Vercel Serverless Function in production:
 
 ```javascript
 // Only starts a TCP listener when run directly (local development)
@@ -309,11 +295,11 @@ The [`vercel.json`](vercel.json) configuration routes all `/api/*` traffic to th
 
 ---
 
-## 🛡️ The Guardrail System
+## The Guardrail System
 
-AI Fiesta includes a robust, **3-stage security system** designed for public hosting.
+AI Fiesta includes a robust, **3-stage security system** designed to prevent abuse and protect against prompt injection attacks.
 
-### Stage 1 — Pre-flight Bouncer (guardrail.service.js)
+### Stage 1 - Pre-flight Bouncer (guardrail.service.js)
 
 Before any expensive API call is made to the ensemble, the user's prompt is evaluated by a dedicated **Bouncer LLM** (`llama-3.3-70b-versatile` on Groq). The Bouncer is strictly instructed to:
 
@@ -331,11 +317,11 @@ const jsonMatch = result.response.match(/\{[\s\S]*\}/);
 const parsedResponse = JSON.parse(jsonMatch[0]);
 ```
 
-### Stage 2 — Fail Closed
+### Stage 2 - Fail Closed
 
-If the Bouncer's response **cannot be parsed** (e.g., network error, malformed response), the system **fails closed** — the request is blocked by default. This is the safest possible behavior.
+If the Bouncer's response **cannot be parsed** (e.g., network error, malformed response), the system **fails closed** , the request is blocked by default. This is the safest possible behavior.
 
-### Stage 3 — No Information Leakage
+### Stage 3 - No Information Leakage
 
 When a request is blocked, the client receives only a **generic error message**:
 > `"Your request could not be processed due to a safety violation."`
@@ -344,7 +330,7 @@ The actual reason determined by the Bouncer is logged internally (server-side) b
 
 ---
 
-## 🤖 Models Used
+## Models Used
 
 | Role | Model | Provider | Purpose |
 |---|---|---|---|
@@ -356,7 +342,7 @@ The actual reason determined by the Bouncer is logged internally (server-side) b
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -396,7 +382,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🌐 Deployment on Vercel
+## Deployment on Vercel
 
 1. Push the repository to GitHub.
 2. Import the project at [vercel.com](https://vercel.com).
@@ -438,7 +424,7 @@ ai-fiesta/
 
 ---
 
-## ⚡ Performance Characteristics
+## Performance Characteristics
 
 | Metric | Value |
 |---|---|
@@ -451,13 +437,4 @@ ai-fiesta/
 
 ---
 
-## 👤 Author
-
-Built by **Mohammed Ashaaf Khan**
-
-- GitHub: [@ashaafkhan](https://github.com/ashaafkhan)
-- Live: [ai-fiesta.ashaaf.in](https://ai-fiesta.ashaaf.in/)
-
----
-
-<p align="center">Made with ❤️ and a lot of LLMs</p>
+<p align="center">Made with ❤️ for the Community</p>
