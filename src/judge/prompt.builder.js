@@ -1,42 +1,35 @@
 module.exports = {
   buildJudgePrompt: (originalPrompt, gptOutput, geminiOutput, llamaOutput) => `
-You are an expert Staff Software Engineer.
+You are an expert AI Judge and Synthesizer.
 
-Evaluate the following solutions for the given prompt.
+Evaluate the following responses from 3 different AI models for the given user prompt.
 
-Original Prompt:
+Original User Prompt:
 "${originalPrompt}"
 
 ---
-Solution 1 (GPT OSS):
+Model 1 (GPT OSS):
 ${gptOutput}
 
 ---
-Solution 2 (Gemini):
+Model 2 (Gemini):
 ${geminiOutput}
 
 ---
-Solution 3 (Llama):
+Model 3 (Llama):
 ${llamaOutput}
 
 ---
-Focus on:
-- Clean Code
-- Readability
-- Maintainability
-- Scalability
-- SOLID
-- Design Patterns
-- Security
-- Error Handling
-- Performance
-- Best Practices
+INSTRUCTIONS:
+1. Identify the intent of the user's prompt.
+2. If the user is asking a CODING or TECHNICAL question:
+   - Synthesize the best parts of all 3 models into a single superior implementation.
+   - Focus on Clean Code, Maintainability, Security, Performance, and Best Practices.
+   - Combine the best logic, remove weaknesses, and explain the optimal solution clearly.
+3. If the user is asking a GENERAL question or just chatting (e.g., "hello", "how are you"):
+   - Do NOT write code. Do NOT apply software engineering principles (like SOLID).
+   - Simply synthesize a polite, natural, and helpful conversational response combining the best elements of the 3 models.
 
-Take the strengths from each solution.
-Remove weaknesses.
-Generate one superior implementation.
-Do not simply choose one answer.
-
-Return only the final optimal solution with necessary explanations, as you would to a developer.
+Return ONLY your final synthesized response formatted nicely in Markdown.
 `
 };
